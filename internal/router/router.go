@@ -38,6 +38,7 @@ func mapRoutes(r *gin.Engine) {
 	// DB connectors, rest clients, and other stuff init
 	ctx := context.Background()
 	redisClient := InitRedisClient(&ctx)
+
 	// Repositories init
 	repo := repository.NewUploadRepository()
 
@@ -48,18 +49,15 @@ func mapRoutes(r *gin.Engine) {
 	ctrl := controller.NewUploadController(svc)
 
 	// Endpoints
-	/*r.GET(defines.EndpointExample, ctrl.ExampleHandler)*/
 
 	// Health check endpoint
 	r.GET(defines.EndpointPing, healthCheck)
 	log.Printf("Polling queue %s\n", defines.QueueUploadFile)
+
 	for {
-		fileName, err := redisClient.LPop(ctx, defines.QueueUploadFile).Result()
+		fileName, err := redisClient.BLPop(ctx, 0, defines.QueueUploadFile).Result()
 		if err != nil {
-			if err.Error() == "redis: nil" {
-				continue
-			}
-			log.Printf("Error receiving File Name: %+v\n", err)
+			log.Println(err)
 		}
 		ctrl.UploadFile(fileName)
 	}
