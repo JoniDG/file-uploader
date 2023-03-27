@@ -2,10 +2,12 @@ package service
 
 import (
 	"encoding/csv"
+	"file-uploader/internal/domain"
 	"file-uploader/internal/repository"
 	"fmt"
 	"log"
 	"os"
+	"strconv"
 )
 
 type UploadService interface {
@@ -25,15 +27,31 @@ func (r *uploadService) UploadFile(fileName string) {
 		log.Fatalf("Cannot open '%s': %s\n", fileName, err.Error())
 	}
 	defer file.Close()
-	ReadFile(file)
+	rows := ReadFile(file)
+	for _, row := range rows {
+		id, err := strconv.Atoi(row[0])
+		if err != nil {
+			log.Println(err)
+		}
+		persona := domain.File{
+			ID:       int64(id),
+			Name:     row[1],
+			LastName: row[2],
+			Email:    row[3],
+			Job:      row[4],
+		}
+		r.repo.UploadFile(&persona)
+	}
 }
 
-func ReadFile(file *os.File) {
-	r := csv.NewReader(file)
-	rows, err := r.ReadAll()
+func ReadFile(file *os.File) [][]string {
+	reader := csv.NewReader(file)
+	reader.Comma = ','
+	rows, err := reader.ReadAll()
+
 	if err != nil {
-		fmt.Println("Error al leer las filas del archivo:", err)
-		return
+		fmt.Println("Error al leer el archivo:", err)
+		return nil
 	}
-	log.Println(rows[0][1])
+	return rows
 }

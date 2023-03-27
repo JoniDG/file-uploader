@@ -1,14 +1,11 @@
 package main
 
 import (
-	"file-uploader/internal/router"
+	"file-uploader/internal/job"
 	_ "github.com/joho/godotenv/autoload"
-	"log"
 )
 
 func main() {
-	r := router.New()
-	if err := r.Run(); err != nil {
-		log.Fatalln(err)
-	}
+	j := job.NewJob()
+	j.Job()
 }
