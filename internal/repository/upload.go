@@ -13,13 +13,13 @@ type UploadRepository interface {
 }
 type uploadRepository struct {
 	db         *sqlx.DB
-	sqlBuilder tableSQL
+	sqlBuilder *tableSQL
 }
 
 func NewUploadRepository(db *sqlx.DB) UploadRepository {
 	return &uploadRepository{
 		db: db,
-		sqlBuilder: tableSQL{
+		sqlBuilder: &tableSQL{
 			table: defines.TableUploadFile,
 		},
 	}

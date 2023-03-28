@@ -15,7 +15,7 @@ import (
 )
 
 type Jobs interface {
-	Job()
+	Start()
 }
 type job struct {
 }
@@ -25,11 +25,10 @@ func NewJob() Jobs {
 }
 
 func InitPostgres() *sqlx.DB {
-	postgresURI := fmt.Sprintf("postgres://%s:%s@%s:%s/postgres?sslmode=disable",
+	postgresURI := fmt.Sprintf("postgres://%s:%s@%s/postgres?sslmode=disable",
 		os.Getenv(defines.EnvPostgresUser),
 		os.Getenv(defines.EnvPostgresPassword),
 		os.Getenv(defines.EnvPostgresHost),
-		os.Getenv(defines.EnvPostgresPort),
 	)
 	db, err := sqlx.Open("postgres", postgresURI)
 	if err != nil {
@@ -53,7 +52,7 @@ func InitRedis() *redis.Client {
 	return redisClient
 }
 
-func (c *job) Job() {
+func (c *job) Start() {
 	//PostgresSQL init
 	db := InitPostgres()
 	// Repositories init
@@ -70,10 +69,13 @@ func (c *job) Job() {
 	ctx := context.Background()
 	fmt.Printf("Queue %s running\n", defines.QueueUploadFile)
 	for {
-		fileName, err := rc.BLPop(ctx, 0, defines.QueueUploadFile).Result()
+		result, err := rc.BLPop(ctx, 0, defines.QueueUploadFile).Result()
 		if err != nil {
 			log.Println(err)
 		}
-		ctrl.UploadFile(fileName)
+		if result != nil && len(result) == 2 {
+			ctrl.UploadFile(&result[1])
+		}
+
 	}
 }

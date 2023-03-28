@@ -7,5 +7,5 @@ import (
 
 func main() {
 	j := job.NewJob()
-	j.Job()
+	j.Start()
 }

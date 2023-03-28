@@ -33,14 +33,14 @@ func (r *uploadService) UploadFile(fileName string) {
 		if err != nil {
 			log.Println(err)
 		}
-		persona := domain.File{
+		dataFile := domain.File{
 			ID:       int64(id),
 			Name:     row[1],
 			LastName: row[2],
 			Email:    row[3],
 			Job:      row[4],
 		}
-		r.repo.UploadFile(&persona)
+		r.repo.UploadFile(&dataFile)
 	}
 }
 
