@@ -8,6 +8,7 @@ import (
 	"file-uploader/internal/service"
 	"fmt"
 	"github.com/jmoiron/sqlx"
+	_ "github.com/lib/pq"
 	"github.com/redis/go-redis/v9"
 	"log"
 	"os"
@@ -34,6 +35,7 @@ func InitPostgres() *sqlx.DB {
 	if err != nil {
 		log.Panic(err)
 	}
+	log.Println("Postgres Conected")
 	return db
 }
 
@@ -47,6 +49,7 @@ func InitRedis() *redis.Client {
 	if err != nil {
 		log.Fatalf("Error ping Redis: %+v\n", err)
 	}
+	log.Println("Redis Connected")
 	return redisClient
 }
 
@@ -65,6 +68,7 @@ func (c *job) Job() {
 	//Redis Client Init
 	rc := InitRedis()
 	ctx := context.Background()
+	fmt.Printf("Queue %s running\n", defines.QueueUploadFile)
 	for {
 		fileName, err := rc.BLPop(ctx, 0, defines.QueueUploadFile).Result()
 		if err != nil {
