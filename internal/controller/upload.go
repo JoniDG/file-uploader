@@ -8,13 +8,13 @@ type UploadController interface {
 	UploadFile(*string)
 }
 type uploadController struct {
-	svc service.UploadService
+	svc service.FileService
 }
 
-func NewUploadController(svc service.UploadService) UploadController {
+func NewUploadController(svc service.FileService) UploadController {
 	return &uploadController{svc: svc}
 }
 
 func (c *uploadController) UploadFile(fileName *string) {
-	c.svc.UploadFile(*fileName)
+	c.svc.HandlerFile(*fileName)
 }

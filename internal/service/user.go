@@ -7,21 +7,20 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"strconv"
 )
 
-type UploadService interface {
-	UploadFile(string)
+type FileService interface {
+	HandlerFile(string)
 }
-type uploadService struct {
-	repo repository.UploadRepository
-}
-
-func NewUploadService(repo repository.UploadRepository) UploadService {
-	return &uploadService{repo: repo}
+type fileService struct {
+	repo repository.UserRepository
 }
 
-func (r *uploadService) UploadFile(fileName string) {
+func NewFileService(repo repository.UserRepository) FileService {
+	return &fileService{repo: repo}
+}
+
+func (r *fileService) HandlerFile(fileName string) {
 	file, err := os.Open(fileName)
 	if err != nil {
 		log.Fatalf("Cannot open '%s': %s\n", fileName, err.Error())
@@ -29,19 +28,17 @@ func (r *uploadService) UploadFile(fileName string) {
 	defer file.Close()
 	rows := ReadFile(file)
 	for _, row := range rows {
-		id, err := strconv.Atoi(row[0])
+		user, err := domain.RowFileToUser(row)
+		if err != nil {
+			fmt.Printf("Error ID format: %+v\n", row)
+			continue
+		}
+		err = r.repo.Create(user)
 		if err != nil {
 			log.Println(err)
 		}
-		dataFile := domain.File{
-			ID:       int64(id),
-			Name:     row[1],
-			LastName: row[2],
-			Email:    row[3],
-			Job:      row[4],
-		}
-		r.repo.UploadFile(&dataFile)
 	}
+	fmt.Printf("Archivo %s cargado\n", fileName)
 }
 
 func ReadFile(file *os.File) [][]string {

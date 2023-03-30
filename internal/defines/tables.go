@@ -1,5 +1,5 @@
 package defines
 
 const (
-	TableUploadFile = "upload.example"
+	TableUploadFile = "user_managment.users"
 )
