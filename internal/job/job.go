@@ -74,7 +74,7 @@ func (c *job) Start() {
 			log.Println(err)
 		}
 		if result != nil && len(result) == 2 {
-			ctrl.UploadFile(&result[1])
+			go ctrl.UploadFile(&result[1])
 		}
 
 	}

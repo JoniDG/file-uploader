@@ -2,6 +2,7 @@ package controller
 
 import (
 	"file-uploader/internal/service"
+	"log"
 )
 
 type UploadController interface {
@@ -16,5 +17,8 @@ func NewUploadController(svc service.FileService) UploadController {
 }
 
 func (c *uploadController) UploadFile(fileName *string) {
-	c.svc.HandlerFile(*fileName)
+	err := c.svc.HandlerFile(*fileName)
+	if err != nil {
+		log.Println(err.Error())
+	}
 }
