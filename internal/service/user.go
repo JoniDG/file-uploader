@@ -4,7 +4,6 @@ import (
 	"encoding/csv"
 	"file-uploader/internal/domain"
 	"file-uploader/internal/repository"
-	"fmt"
 	"log"
 	"os"
 )
@@ -35,23 +34,23 @@ func (r *fileService) HandlerFile(fileName string) error {
 		return &domain.Error{
 			NameFile: fileName,
 			Err:      err,
-			Msg:      "Error al leer el archivo",
+			Msg:      "Error reading file",
 		}
 	}
-	for _, row := range rows {
+	for _, row := range *rows {
 		user, err := domain.RowFileToUser(row)
 		if err != nil {
-			e := domain.Error{
+			e := &domain.Error{
 				NameFile: fileName,
 				Err:      err,
-				Msg:      fmt.Sprintf("Error ID format: %+v\n", row),
+				Msg:      "Error parsing row to user",
 			}
 			log.Println(e.Error())
 			continue
 		}
 		err = r.repo.Create(user)
 		if err != nil {
-			e := domain.Error{
+			e := &domain.Error{
 				NameFile: fileName,
 				Err:      err,
 				Msg:      "Error creating user",
@@ -62,7 +61,7 @@ func (r *fileService) HandlerFile(fileName string) error {
 	return nil
 }
 
-func ReadFile(file *os.File) ([][]string, error) {
+func ReadFile(file *os.File) (*[][]string, error) {
 	reader := csv.NewReader(file)
 	reader.Comma = ','
 	rows, err := reader.ReadAll()
@@ -70,5 +69,5 @@ func ReadFile(file *os.File) ([][]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	return rows, nil
+	return &rows, nil
 }
