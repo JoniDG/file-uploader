@@ -7,26 +7,26 @@ import (
 )
 
 type StatusRepository interface {
-	CreateStatus(*string, *string) error
-	UpdateStatus(*string, *string) error
+	Create(nameFile string, status string) error
+	Update(nameFile string, status string) error
 }
 
 type statusRepository struct {
 	db         *sqlx.DB
-	sqlBuilder *tableSQL2
+	sqlBuilder *tableStatus
 }
 
 func NewStatusFileRepo(db *sqlx.DB) StatusRepository {
 	return &statusRepository{
 		db: db,
-		sqlBuilder: &tableSQL2{
+		sqlBuilder: &tableStatus{
 			table: defines.TableStatusFile,
 		},
 	}
 }
 
-func (r *statusRepository) CreateStatus(nameFile *string, status *string) error {
-	query, args, err := r.sqlBuilder.CreateSQL(nameFile, status)
+func (r *statusRepository) Create(nameFile string, status string) error {
+	query, args, err := r.sqlBuilder.CreateSQL(&nameFile, &status)
 	if err != nil {
 		return err
 	}
@@ -37,8 +37,8 @@ func (r *statusRepository) CreateStatus(nameFile *string, status *string) error 
 	return nil
 }
 
-func (r *statusRepository) UpdateStatus(nameFile *string, status *string) error {
-	query, args, err := r.sqlBuilder.UpdateSQL(nameFile, status)
+func (r *statusRepository) Update(nameFile string, status string) error {
+	query, args, err := r.sqlBuilder.UpdateSQL(&nameFile, &status)
 	if err != nil {
 		return err
 	}
@@ -49,11 +49,11 @@ func (r *statusRepository) UpdateStatus(nameFile *string, status *string) error 
 	return nil
 }
 
-type tableSQL2 struct {
+type tableStatus struct {
 	table string
 }
 
-func (s *tableSQL2) CreateSQL(nameFile *string, status *string) (string, []interface{}, error) {
+func (s *tableStatus) CreateSQL(nameFile *string, status *string) (string, []interface{}, error) {
 	query, args, err := squirrel.Insert(s.table).
 		Columns("fileName", "status").
 		Values(nameFile, status).
@@ -62,7 +62,7 @@ func (s *tableSQL2) CreateSQL(nameFile *string, status *string) (string, []inter
 	return query, args, err
 }
 
-func (s *tableSQL2) UpdateSQL(nameFile *string, status *string) (string, []interface{}, error) {
+func (s *tableStatus) UpdateSQL(nameFile *string, status *string) (string, []interface{}, error) {
 	query, args, err := squirrel.Update(s.table).
 		Set("status", status).
 		PlaceholderFormat(squirrel.Dollar).

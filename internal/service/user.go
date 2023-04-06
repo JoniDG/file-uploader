@@ -2,9 +2,9 @@ package service
 
 import (
 	"encoding/csv"
+	"file-uploader/internal/defines"
 	"file-uploader/internal/domain"
 	"file-uploader/internal/repository"
-	"fmt"
 	"log"
 	"os"
 )
@@ -43,19 +43,19 @@ func (r *fileService) HandlerFile(fileName string) error {
 			Msg:      "Error reading file",
 		}
 	}
-	status = "Processing"
-	err = r.repoStatus.CreateStatus(&fileName, &status)
+	status = defines.StatusProcessing
+	err = r.repoStatus.Create(fileName, status)
 	if err != nil {
-		fmt.Printf("Error en status: %v\n", err)
+		e := &domain.Error{
+			NameFile: fileName,
+			Err:      err,
+			Msg:      "Error creating status",
+		}
+		log.Println(e.Error())
 	}
 	for _, row := range *rows {
 		user, err := domain.RowFileToUser(row)
 		if err != nil {
-			status = "Processing with error"
-			failStatus := r.repoStatus.UpdateStatus(&fileName, &status)
-			if failStatus != nil {
-				fmt.Printf("Error en status: %v\n", err)
-			}
 			e := &domain.Error{
 				NameFile: fileName,
 				Err:      err,
@@ -66,10 +66,15 @@ func (r *fileService) HandlerFile(fileName string) error {
 		}
 		err = r.repoUser.Create(user)
 		if err != nil {
-			status = "Error"
-			failStatus := r.repoStatus.UpdateStatus(&fileName, &status)
-			if failStatus != nil {
-				fmt.Printf("Error en status: %v\n", err)
+			status = defines.StatusError
+			updateErr := r.repoStatus.Update(fileName, status)
+			if updateErr != nil {
+				log.Println(
+					&domain.Error{
+						NameFile: fileName,
+						Err:      updateErr,
+						Msg:      "Error updating status",
+					})
 			}
 			e := &domain.Error{
 				NameFile: fileName,
@@ -79,22 +84,25 @@ func (r *fileService) HandlerFile(fileName string) error {
 			log.Println(e.Error())
 		}
 	}
-	if status == "Processing with error" {
-		status = "Processed with error"
-	} else {
-		status = "Processed"
-		err = os.Remove(fileName)
-		if err != nil {
-			return &domain.Error{
+	status = defines.StatusOk
+	err = os.Remove(fileName)
+	if err != nil {
+		log.Println(
+			&domain.Error{
 				NameFile: fileName,
 				Err:      err,
-				Msg:      "Cannot delete file",
-			}
-		}
+				Msg:      "Error deleting file",
+			})
 	}
-	err = r.repoStatus.UpdateStatus(&fileName, &status)
+
+	err = r.repoStatus.Update(fileName, status)
 	if err != nil {
-		fmt.Printf("Error en status: %v\n", err)
+		log.Println(
+			&domain.Error{
+				NameFile: fileName,
+				Err:      err,
+				Msg:      "Error updating status",
+			})
 	}
 	return nil
 }
