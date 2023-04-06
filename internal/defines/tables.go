@@ -1,5 +1,6 @@
 package defines
 
 const (
-	TableUploadFile = "user_managment.users"
+	TableUploadFile = "core.users"
+	TableStatusFile = "core.status"
 )

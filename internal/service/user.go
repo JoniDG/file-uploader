@@ -2,25 +2,32 @@ package service
 
 import (
 	"encoding/csv"
+	"file-uploader/internal/defines"
 	"file-uploader/internal/domain"
 	"file-uploader/internal/repository"
 	"log"
 	"os"
+	"time"
 )
 
 type FileService interface {
 	HandlerFile(string) error
 }
 type fileService struct {
-	repo repository.UserRepository
+	repoUser   repository.UserRepository
+	repoStatus repository.StatusRepository
 }
 
-func NewFileService(repo repository.UserRepository) FileService {
-	return &fileService{repo: repo}
+func NewFileService(repoUser repository.UserRepository, repoStatus repository.StatusRepository) FileService {
+	return &fileService{
+		repoUser:   repoUser,
+		repoStatus: repoStatus,
+	}
 }
 
 func (r *fileService) HandlerFile(fileName string) error {
 	file, err := os.Open(fileName)
+	var status string
 	if err != nil {
 		return &domain.Error{
 			NameFile: fileName,
@@ -37,6 +44,16 @@ func (r *fileService) HandlerFile(fileName string) error {
 			Msg:      "Error reading file",
 		}
 	}
+	status = defines.StatusProcessing
+	err = r.repoStatus.Create(fileName, status, time.Now().Format(time.RFC3339))
+	if err != nil {
+		e := &domain.Error{
+			NameFile: fileName,
+			Err:      err,
+			Msg:      "Error creating status",
+		}
+		log.Println(e.Error())
+	}
 	for _, row := range *rows {
 		user, err := domain.RowFileToUser(row)
 		if err != nil {
@@ -48,8 +65,18 @@ func (r *fileService) HandlerFile(fileName string) error {
 			log.Println(e.Error())
 			continue
 		}
-		err = r.repo.Create(user)
+		err = r.repoUser.Create(user)
 		if err != nil {
+			status = defines.StatusError
+			updateErr := r.repoStatus.Update(fileName, status, time.Now().Format(time.RFC3339))
+			if updateErr != nil {
+				log.Println(
+					&domain.Error{
+						NameFile: fileName,
+						Err:      updateErr,
+						Msg:      "Error updating status",
+					})
+			}
 			e := &domain.Error{
 				NameFile: fileName,
 				Err:      err,
@@ -57,6 +84,26 @@ func (r *fileService) HandlerFile(fileName string) error {
 			}
 			log.Println(e.Error())
 		}
+	}
+	status = defines.StatusOk
+	err = os.Remove(fileName)
+	if err != nil {
+		log.Println(
+			&domain.Error{
+				NameFile: fileName,
+				Err:      err,
+				Msg:      "Error deleting file",
+			})
+	}
+
+	err = r.repoStatus.Update(fileName, status, time.Now().Format(time.RFC3339))
+	if err != nil {
+		log.Println(
+			&domain.Error{
+				NameFile: fileName,
+				Err:      err,
+				Msg:      "Error updating status",
+			})
 	}
 	return nil
 }

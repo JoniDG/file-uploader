@@ -56,10 +56,10 @@ func (c *job) Start() {
 	//PostgresSQL init
 	db := InitPostgres()
 	// Repositories init
-	repo := repository.NewUserRepository(db)
-
+	userRepo := repository.NewUserRepository(db)
+	statusFileRepo := repository.NewStatusFileRepo(db)
 	// Services init
-	svc := service.NewFileService(repo)
+	svc := service.NewFileService(userRepo, statusFileRepo)
 
 	// Controllers init
 	ctrl := controller.NewUploadController(svc)
