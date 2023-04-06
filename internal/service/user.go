@@ -7,6 +7,7 @@ import (
 	"file-uploader/internal/repository"
 	"log"
 	"os"
+	"time"
 )
 
 type FileService interface {
@@ -44,7 +45,7 @@ func (r *fileService) HandlerFile(fileName string) error {
 		}
 	}
 	status = defines.StatusProcessing
-	err = r.repoStatus.Create(fileName, status)
+	err = r.repoStatus.Create(fileName, status, time.Now().Format(time.RFC3339))
 	if err != nil {
 		e := &domain.Error{
 			NameFile: fileName,
@@ -67,7 +68,7 @@ func (r *fileService) HandlerFile(fileName string) error {
 		err = r.repoUser.Create(user)
 		if err != nil {
 			status = defines.StatusError
-			updateErr := r.repoStatus.Update(fileName, status)
+			updateErr := r.repoStatus.Update(fileName, status, time.Now().Format(time.RFC3339))
 			if updateErr != nil {
 				log.Println(
 					&domain.Error{
@@ -95,7 +96,7 @@ func (r *fileService) HandlerFile(fileName string) error {
 			})
 	}
 
-	err = r.repoStatus.Update(fileName, status)
+	err = r.repoStatus.Update(fileName, status, time.Now().Format(time.RFC3339))
 	if err != nil {
 		log.Println(
 			&domain.Error{

@@ -7,8 +7,8 @@ import (
 )
 
 type StatusRepository interface {
-	Create(nameFile string, status string) error
-	Update(nameFile string, status string) error
+	Create(nameFile string, status string, createdAt string) error
+	Update(nameFile string, status string, uodatedAt string) error
 }
 
 type statusRepository struct {
@@ -25,8 +25,8 @@ func NewStatusFileRepo(db *sqlx.DB) StatusRepository {
 	}
 }
 
-func (r *statusRepository) Create(nameFile string, status string) error {
-	query, args, err := r.sqlBuilder.CreateSQL(&nameFile, &status)
+func (r *statusRepository) Create(nameFile string, status string, createdAt string) error {
+	query, args, err := r.sqlBuilder.CreateSQL(nameFile, status, createdAt)
 	if err != nil {
 		return err
 	}
@@ -37,8 +37,8 @@ func (r *statusRepository) Create(nameFile string, status string) error {
 	return nil
 }
 
-func (r *statusRepository) Update(nameFile string, status string) error {
-	query, args, err := r.sqlBuilder.UpdateSQL(&nameFile, &status)
+func (r *statusRepository) Update(nameFile string, status string, updatedAt string) error {
+	query, args, err := r.sqlBuilder.UpdateSQL(nameFile, status, updatedAt)
 	if err != nil {
 		return err
 	}
@@ -53,18 +53,19 @@ type tableStatus struct {
 	table string
 }
 
-func (s *tableStatus) CreateSQL(nameFile *string, status *string) (string, []interface{}, error) {
+func (s *tableStatus) CreateSQL(nameFile string, status string, createdAt string) (string, []interface{}, error) {
 	query, args, err := squirrel.Insert(s.table).
-		Columns("fileName", "status").
-		Values(nameFile, status).
+		Columns("fileName", "status", "created_at").
+		Values(nameFile, status, createdAt).
 		PlaceholderFormat(squirrel.Dollar).
 		ToSql()
 	return query, args, err
 }
 
-func (s *tableStatus) UpdateSQL(nameFile *string, status *string) (string, []interface{}, error) {
+func (s *tableStatus) UpdateSQL(nameFile string, status string, updatedAt string) (string, []interface{}, error) {
 	query, args, err := squirrel.Update(s.table).
 		Set("status", status).
+		Set("updated_at", updatedAt).
 		PlaceholderFormat(squirrel.Dollar).
 		Where(squirrel.Eq{"fileName": nameFile}).
 		ToSql()
